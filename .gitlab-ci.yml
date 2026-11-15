@@ -20,14 +20,26 @@ test-node:
     - npm ci || npm install
     - node --test
 
+# Tao GitLab Release khi co tag v* / create the GitLab Release on v* tags.
+# Khong dung keyword `release:` — runner 19.6+ yeu cau glab/release-cli trong
+# image chay job va embed mo ta markdown vao shell script (backtick bi thuc thi).
+# Goi Releases API truc tiep qua .ci/create_gitlab_release.py — xem docstring.
+# Not using the `release:` keyword — runner 19.6+ needs glab/release-cli inside
+# the job image and embeds the markdown notes into shell code (backticks get
+# executed). We call the Releases API directly via .ci/create_gitlab_release.py
+# — see that file's docstring.
 release:
   stage: release
-  image: registry.gitlab.com/gitlab-org/release-cli:latest
+  image: python:3.13-alpine
   needs: ["test-python", "test-node"]
   rules:
     - if: '$CI_COMMIT_TAG =~ /^v/'
   script:
-    - echo "Publishing release $CI_COMMIT_TAG / Phát hành $CI_COMMIT_TAG"
-  release:
-    tag_name: $CI_COMMIT_TAG
-    description: "hermes-zalo-plugin $CI_COMMIT_TAG — see CHANGELOG / xem CHANGELOG"
+    - python -u .ci/create_gitlab_release.py
+  # Giu release-response.json doc duoc ca khi loi / keep release-response.json
+  # readable even if the call fails
+  artifacts:
+    when: always
+    paths:
+      - release-response.json
+    expire_in: 30 days

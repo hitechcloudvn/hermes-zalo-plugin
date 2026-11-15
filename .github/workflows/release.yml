@@ -29,9 +29,16 @@ jobs:
           node-version: "22"
 
       - name: Kiểm tra trước khi phát hành / Pre-release checks
+        # Heredoc 'PY' (nháy đơn) KHONG expand bien shell — truyen tag qua env
+        # thay vi "${GITHUB_REF_NAME}" trong ma Python / quoted 'PY' heredoc does
+        # NOT expand shell variables — pass the tag via env instead of embedding
+        # "${GITHUB_REF_NAME}" in the Python code (it would stay literal).
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
         run: |
           python -m pip install pytest -q
           python - <<'PY'
+          import os
           import sys
           try:
               import yaml
@@ -40,7 +47,7 @@ jobs:
               subprocess.check_call([sys.executable, "-m", "pip", "install", "pyyaml", "-q"])
               import yaml
           data = yaml.safe_load(open("plugin.yaml", encoding="utf-8"))
-          tag = "${GITHUB_REF_NAME}".lstrip("v")
+          tag = os.environ["RELEASE_TAG"].lstrip("v")
           print(f"tag={tag} plugin.yaml version={data.get('version')}")
           if tag != str(data.get("version")):
               sys.exit(f"::error::Tag v{tag} != plugin.yaml version {data.get('version')}")
