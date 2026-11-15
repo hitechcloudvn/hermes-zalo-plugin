@@ -84,15 +84,34 @@ def read_cached_image(cache_dir: str, local_path: str, *, max_bytes: int = MAX_I
     if not basename or basename in (".", "..") or os.sep in basename or (os.altsep and os.altsep in basename):
         raise BridgeError("invalid basename")
 
-    dir_fd = os.open(cache_dir, os.O_RDONLY | getattr(os, "O_DIRECTORY", 0))
     try:
-        flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_CLOEXEC", 0)
-        fd = os.open(basename, flags, dir_fd=dir_fd)
-    except OSError as e:
-        os.close(dir_fd)
-        raise BridgeError(f"open failed: {e.__class__.__name__}")
+        dir_fd = os.open(cache_dir, os.O_RDONLY | getattr(os, "O_DIRECTORY", 0))
+    except OSError:
+        dir_fd = None  # Windows: directories cannot be opened as descriptors
+    if dir_fd is not None:
+        try:
+            flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_CLOEXEC", 0)
+            fd = os.open(basename, flags, dir_fd=dir_fd)
+        except OSError as e:
+            os.close(dir_fd)
+            raise BridgeError(f"open failed: {e.__class__.__name__}")
+        else:
+            os.close(dir_fd)
     else:
-        os.close(dir_fd)
+        # Windows fallback (no dir fds, no O_NOFOLLOW): reject symlinks and
+        # non-regular files via lstat BEFORE opening the full path.
+        target = os.path.join(cache_dir, basename)
+        try:
+            st0 = os.lstat(target)
+        except OSError as e:
+            raise BridgeError(f"open failed: {e.__class__.__name__}")
+        if stat.S_ISLNK(st0.st_mode) or not stat.S_ISREG(st0.st_mode):
+            raise BridgeError("not a regular file")
+        try:
+            flags = os.O_RDONLY | getattr(os, "O_CLOEXEC", 0) | getattr(os, "O_BINARY", 0)
+            fd = os.open(target, flags)
+        except OSError as e:
+            raise BridgeError(f"open failed: {e.__class__.__name__}")
     try:
         st = os.fstat(fd)
         if not stat.S_ISREG(st.st_mode):

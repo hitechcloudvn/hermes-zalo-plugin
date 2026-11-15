@@ -10,6 +10,23 @@ Record schema:
     {id, chat_id, thread_type='group', task, target_display, target_uid?,
      fire_times: [epoch,...], next_idx, max_attempts, deadline_at?,
      created_by_uid, created_at}
+
+----
+
+Scheduler for non-owner dynamic reminders (dep-free, independent of Hermes
+core).
+
+A reminder = a list of ``fire_times`` computed UP FRONT at creation time
+(escalation: the milestones from set-time → deadline) plus a ``next_idx``
+cursor. Deterministic and testable without a gateway. IO is atomic JSON to
+disk (like rate_limit.py); the pure helpers (compute/current/due/overdue) take
+``now`` as a parameter so tests can use fixed values. The asyncio tick + LLM
+calls live in the adapter (Phase 4), NOT in this module.
+
+Record schema:
+    {id, chat_id, thread_type='group', task, target_display, target_uid?,
+     fire_times: [epoch,...], next_idx, max_attempts, deadline_at?,
+     created_by_uid, created_at}
 """
 from __future__ import annotations
 

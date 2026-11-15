@@ -3,13 +3,18 @@ label: Zalo (cá nhân)
 kind: platform
 version: 1.1.0
 description: >
-  Adapter Zalo cá nhân cho Hermes Agent qua sidecar Node.js (zca-js).
-  Dùng Zalo Web API không chính thức — KHUYẾN NGHỊ dùng SỐ PHỤ, không dùng số
-  chính. Tính năng: nhận/gửi tin, gửi ảnh/file/sticker/reaction, quét thành
-  viên nhóm theo link, phễu marketing (kết bạn / nhắn tin / Google Sheet CRM),
-  kết bạn & nhắn 1 người theo uid/SĐT/tag/tên.
-author: Cộng đồng
-license: "Dùng tự chịu trách nhiệm — xem README (rủi ro khoá tài khoản Zalo)."
+  Personal Zalo adapter for Hermes Agent via a Node.js sidecar (zca-js) using
+  the unofficial Zalo Web API — a SECONDARY Zalo account is strongly
+  recommended. Features: send/receive messages, images/files/stickers/
+  reactions, group-member scan from invite links, marketing funnel (friend
+  requests / messaging / Google Sheet CRM), and 1-to-1 friend add & DM by
+  uid/phone/tag/name. / Adapter Zalo cá nhân cho Hermes Agent qua sidecar
+  Node.js (zca-js), dùng Zalo Web API không chính thức — KHUYẾN NGHỊ dùng SỐ
+  PHỤ, không dùng số chính. Tính năng: nhận/gửi tin, gửi ảnh/file/sticker/
+  reaction, quét thành viên nhóm theo link, phễu marketing (kết bạn / nhắn tin
+  / Google Sheet CRM), kết bạn & nhắn 1 người theo uid/SĐT/tag/tên.
+author: "Nguyễn Thanh An <thanhan92f1@gmail.com> (HiTechCloud.VN)"
+license: "MIT — xem LICENSE / see LICENSE (kèm miễn trừ trách nhiệm trong README / README disclaimer applies)"
 
 requires_env:
   - name: ZALO_PERSONAL_OWNER_UID

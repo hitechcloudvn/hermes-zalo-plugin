@@ -1,0 +1,61 @@
+name: CI
+
+# Song ngữ: Kiểm thử tự động / Automated checks
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  python:
+    name: Kiểm thử Python / Python test (${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cài Python / Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Cài pytest / Install pytest
+        run: pip install pytest
+
+      - name: Kiểm tra bản quyền / License file check
+        run: test -f LICENSE && echo "LICENSE OK"
+
+      - name: Chạy pytest / Run pytest
+        run: python -m pytest -q
+
+  node:
+    name: Kiểm thử Node / Node test (${{ matrix.node-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: ["20", "22"]
+    defaults:
+      run:
+        working-directory: sidecar
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cài Node / Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Cài dependencies sidecar / Install sidecar dependencies
+        run: npm ci || npm install
+
+      - name: Chạy node --test / Run node --test
+        run: node --test

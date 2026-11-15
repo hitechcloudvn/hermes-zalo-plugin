@@ -18,6 +18,29 @@
  *   ZALO_PERSONAL_PROXY         — proxy URL (http://user:pass@host:port hoặc socks5://...)
  *   ZALO_PERSONAL_SIDECAR_PORT  — port HTTP/WS (default 3838)
  *   ZALO_PERSONAL_SESSION_DIR   — folder lưu session.json (default ~/.hermes/zalo)
+ *
+ * ----
+ *
+ * Hermes Zalo Personal — Node.js Sidecar (EN).
+ *
+ * Wraps zca-js so the Python adapter (Hermes gateway) can call it over
+ * HTTP + WebSocket.
+ *
+ * Endpoints:
+ *   GET  /health                — { status, uid, name }
+ *   POST /login/qr              — start QR login flow
+ *   GET  /qr.png                — QR PNG image (only while pending)
+ *   POST /send/text             — { thread_id, thread_type, text, quote_id? }
+ *   POST /send/image            — { thread_id, thread_type, file_path, caption? }
+ *   POST /send/file             — { thread_id, thread_type, file_path }
+ *   GET  /media/:cache_key      — serve cached media downloaded from inbound
+ *   POST /logout                — logout, wipe session
+ *   WS   /events                — push incoming messages + login state
+ *
+ * Env vars:
+ *   ZALO_PERSONAL_PROXY         — proxy URL (http://user:pass@host:port or socks5://...)
+ *   ZALO_PERSONAL_SIDECAR_PORT  — HTTP/WS port (default 3838)
+ *   ZALO_PERSONAL_SESSION_DIR   — folder holding session.json (default ~/.hermes/zalo)
  */
 
 import express from "express";

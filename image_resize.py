@@ -1,4 +1,31 @@
-"""Bounded image downscaling for the Zalo media pipeline.
+"""Downscale ảnh có giới hạn cho pipeline media Zalo.
+
+Ảnh điện thoại tới ở mức 3-12MB / 3000-4000px trong khi trang landing (và giới
+hạn 6MB của ``landing_upload_image``) chỉ cần ~1024px. Module này thu nhỏ bytes
+của ảnh trong cache về một cạnh dài tối đa TRƯỚC khi upload server-to-server,
+nhờ đó payload nhẹ hơn ~10-30x và ảnh lớn không còn bị chặn vì vượt cap.
+
+Hợp đồng (fail-open có chủ đích):
+  * ``resize_image_to_max_dim`` KHÔNG BAO GIỜ raise khi input hỏng — mọi lỗi
+    (thiếu Pillow, bytes không decode được, ảnh động, lỗi encode) đều trả về
+    bytes GỐC với ``resized=False`` và ``reason`` máy đọc được. Việc chặn dung
+    lượng/tính hợp lệ vẫn do caller (cap của bridge) đảm nhiệm, nên lỗi resize
+    chỉ có thể suy giảm về hành vi cũ, không bao giờ chặn một upload mà trước
+    đây vẫn thành công.
+  * Giữ nguyên định dạng container (jpg→jpg, png→png, webp→webp, gif→gif) để
+    mime/ext caller sniff được vẫn đúng cho cách đặt tên theo nội dung.
+  * Áp dụng EXIF orientation trước khi scale — re-encode làm mất EXIF, nên ảnh
+    chân dung điện thoại không thì sẽ bị xoay khi lên trang. Mọi metadata khác
+    (GPS, thiết bị) bị bỏ: nhẹ hơn VÀ riêng tư hơn.
+  * GIF/WebP động đi qua nguyên vẹn — re-save ngây thơ sẽ âm thầm làm phẳng về
+    frame đầu tiên.
+
+Module thuần: không import Hermes, không đọc env, không I/O filesystem — cùng
+phong cách test được như ``inbound_media.py`` / ``landing_media_bridge.py``.
+
+----
+
+Bounded image downscaling for the Zalo media pipeline.
 
 Phone photos arrive at 3-12MB / 3000-4000px while a landing page (and the
 ``landing_upload_image`` 6MB server cap) only needs ~1024px. This module

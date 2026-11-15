@@ -136,8 +136,10 @@ test("download writes a JPEG with detected .jpg extension", async () => {
   assert.ok(r.path.endsWith(".jpg"));
   const st = await fs.stat(r.path);
   assert.equal(st.size, JPEG.length);
-  // mode 0600 on the final file
-  assert.equal(st.mode & 0o777, 0o600);
+  // mode 0600 on the final file (POSIX only — Windows has no Unix modes)
+  if (process.platform !== "win32") {
+    assert.equal(st.mode & 0o777, 0o600);
+  }
 });
 
 test("PNG sent with a .jpg hint is saved as .png (magic wins)", async () => {

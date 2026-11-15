@@ -70,7 +70,11 @@ class TestReadCachedImage(unittest.TestCase):
     def test_rejects_symlink(self):
         target = self._w("real.jpg", JPEG)
         link = os.path.join(self.tmp, "link.jpg")
-        os.symlink(target, link)
+        try:
+            os.symlink(target, link)
+        except (OSError, NotImplementedError):
+            # Windows without Developer Mode / SeCreateSymbolicLinkPrivilege
+            self.skipTest("symlink creation not permitted on this host")
         with self.assertRaises(BridgeError):
             read_cached_image(self.tmp, link)
 

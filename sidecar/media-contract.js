@@ -1,4 +1,21 @@
 /**
+ * media-contract.js — helper thuần, test được cho hợp đồng media đến của Zalo.
+ *
+ * Tách ra từ server.js để ranh giới media test được bằng unit-test mà không
+ * cần phiên Zalo live. Cố ý KHÔNG import zca-js / express ở đây.
+ *
+ * Nhiệm vụ:
+ *   - Phát hiện ảnh chuẩn theo magic bytes (header/extension chỉ là gợi ý).
+ *   - Ánh xạ MIME <-> extension canonical.
+ *   - Resolver gốc session/media-cache DUY NHẤT được startup, /health và test
+ *     dùng chung (sửa lỗi lệch lịch sử Node `$HOME/zalo` vs Python
+ *     `/opt/data/zalo` — mặc định canonical là `/opt/data/zalo`).
+ *   - Tải streaming có giới hạn: cap byte cứng enforce TRONG lúc stream,
+ *     deadline theo đồng hồ tường, semaphore giới hạn tải song song, chỉ rename
+ *     atomic sau khi bytes đã nằm trên đĩa, và luôn dọn file temp dở dang.
+ *
+ * ----
+ *
  * media-contract.js — pure, testable helpers for the Zalo inbound media contract.
  *
  * Extracted from server.js so the media boundary can be unit-tested without a

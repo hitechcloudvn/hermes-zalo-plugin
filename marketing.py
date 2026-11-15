@@ -12,6 +12,24 @@ Các file dữ liệu lưu tại thư mục session Zalo (mặc định /opt/dat
   marketing_queue.json      — hàng đợi nhỏ giọt (đã duyệt, chờ tới giờ gửi)
   marketing_settings.json   — hạn mức mặc định + auto_accept + cửa sổ gửi
   marketing_batches.json    — đợt soạn sẵn chờ sếp duyệt
+
+----
+
+Zalo marketing funnel logic — store / quota / schedule / select / sidecar /
+sheet / content-gen prompt.
+
+IMPORTANT: this module does NOT import the gateway → locally testable (pytest).
+The adapter (``adapter.py```) imports it and wires the tools + the small drip
+background loop, passing in the gateway's LLM callable and the Google OAuth
+loader.
+
+Data files live in the Zalo session dir (default /opt/data/zalo):
+  marketing_campaigns.json  — campaigns
+  marketing_leads.json      — leads per campaign
+  marketing_quota.json      — per-day action counters + today's override
+  marketing_queue.json      — drip queue (approved, waiting for send time)
+  marketing_settings.json   — default limits + auto_accept + send window
+  marketing_batches.json    — pre-composed batches awaiting the owner's approval
 """
 import json
 import random

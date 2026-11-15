@@ -1,4 +1,26 @@
-"""Segment-aware outbound message filtering for the Zalo plugin.
+"""Lọc tin nhắn đi theo phân đoạn cho plugin Zalo.
+
+Mục tiêu: KHÔNG BAO GIỜ để lộ chẩn đoán vòng đời / ngữ cảnh của Hermes runtime
+ra chat Zalo (busy/interrupt ack, tiến trình nén, "context length exceeded",
+"cannot compress further"…), nhưng LUÔN giữ nguyên câu trả lời thật của trợ lý
+có thể nằm ngay cạnh một thông báo như vậy.
+
+Thiết kế:
+  * ``classify(text)`` trả về :class:`FilterDecision` mang action VÀ phần văn
+    bản đã làm sạch — không phải enum trần — để câu trả lời thật nằm cạnh thông
+    báo vận hành vẫn sống sót.
+  * Pattern được ANCHOR theo cụm từ nhiều chữ riêng biệt, không bao giờ match
+    rộng trên các từ phổ biến như "context" hay "model" (có regression-test).
+  * Idempotent: classify lại kết quả đã làm sạch là no-op / KEEP.
+  * :class:`RecoveryNoticeLimiter` giới hạn thông báo phục hồi terminal tối đa
+    một lần mỗi (tài khoản, chat, correlation, category) trong TTL, có cap LRU
+    — không trạng thái toàn cục vô hạn, không chặn nhầm sang chat khác.
+
+Module thuần: không import Hermes, ``now`` được inject để test được.
+
+----
+
+Segment-aware outbound message filtering for the Zalo plugin.
 
 Goal: NEVER surface Hermes/runtime lifecycle & context diagnostics to a Zalo
 chat (busy/interrupt acks, compression progress, "context length exceeded",

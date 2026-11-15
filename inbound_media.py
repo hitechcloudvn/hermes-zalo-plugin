@@ -1,4 +1,26 @@
-"""Pure, testable helpers for the Zalo inbound media contract (Python side).
+"""Helper thuần, test được cho hợp đồng media đến của Zalo (phần Python).
+
+Tách ra từ ``adapter.py`` để ranh giới media test được bằng unit-test mà không
+cần Hermes gateway đang chạy hay phiên Zalo live. Cố ý KHÔNG import Hermes:
+adapter tự map ``kind`` trả về sang ``MessageType`` của nó.
+
+Nhiệm vụ:
+  * Resolver gốc session/media-cache duy nhất (bản song song của
+    ``media-contract.js`` bên sidecar — mặc định canonical ``/opt/data/zalo``)
+    để hai tiến trình cùng đồng ý một vị trí.
+  * Phát hiện ảnh chuẩn theo magic bytes (kiểm lại phần việc của sidecar;
+    header / kiểu khai báo chỉ là gợi ý).
+  * ``normalize_inbound_media`` — kiểm tra đường dẫn local trong cache nằm
+    trong gốc cache, chọn MIME thật, và trả về local path + MIME + kind mà
+    KHÔNG làm lọt URL vận chuyển.
+  * ``RecentImageIndex`` — bản thay thế cho dict module ``_LAST_THREAD_IMAGES``
+    cũ, có giới hạn và namespace: dedupe theo ``msg_id``, sắp theo
+    ``(event_ts, ingress_seq)``, giữ N ảnh mới nhất mỗi chat, LRU-cap tổng số
+    chat, và clear khi adapter reload / đổi tài khoản.
+
+----
+
+Pure, testable helpers for the Zalo inbound media contract (Python side).
 
 Extracted from ``adapter.py`` so the media boundary can be unit-tested without a
 running Hermes gateway or a live Zalo session. No Hermes imports here on purpose:

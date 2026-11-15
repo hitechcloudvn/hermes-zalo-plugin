@@ -1,0 +1,33 @@
+# Song ngữ: CI GitLab — kiểm thử mọi nhánh, phát hành khi có tag v* /
+# GitLab CI — test on every branch, release on v* tags.
+stages:
+  - test
+  - release
+
+test-python:
+  stage: test
+  image: python:3.13-alpine
+  script:
+    - pip install --quiet pytest
+    - test -f LICENSE && echo "LICENSE OK"
+    - python -m pytest -q
+
+test-node:
+  stage: test
+  image: node:22-alpine
+  script:
+    - cd sidecar
+    - npm ci || npm install
+    - node --test
+
+release:
+  stage: release
+  image: registry.gitlab.com/gitlab-org/release-cli:latest
+  needs: ["test-python", "test-node"]
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^v/'
+  script:
+    - echo "Publishing release $CI_COMMIT_TAG / Phát hành $CI_COMMIT_TAG"
+  release:
+    tag_name: $CI_COMMIT_TAG
+    description: "hermes-zalo-plugin $CI_COMMIT_TAG — see CHANGELOG / xem CHANGELOG"

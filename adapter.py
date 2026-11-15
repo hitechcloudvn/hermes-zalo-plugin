@@ -1,4 +1,18 @@
-"""
+"""Adapter nền tảng Zalo cá nhân cho Hermes Agent.
+
+Adapter gateway theo kiểu plugin, kết nối Zalo cá nhân qua sidecar Node.js
+(bọc thư viện zca-js). Sidecar chạy như tiến trình con, mở HTTP + WebSocket
+trên 127.0.0.1:3838.
+
+Cấu hình qua biến môi trường:
+    ZALO_PERSONAL_SIDECAR_PORT   — port sidecar (mặc định 3838)
+    ZALO_PERSONAL_OWNER_UID      — Zalo UID của chủ tài khoản — BẮT BUỘC
+    ZALO_PERSONAL_OWNER_USER_ID  — Hermes user_id để map identity (mặc định = OWNER_UID)
+    ZALO_PERSONAL_ALLOWED_USERS  — danh sách UID khác được phép chat (phẩy ngăn cách)
+    ZALO_PERSONAL_HOME_THREAD    — thread_id mặc định cho cron delivery
+
+----
+
 Zalo Personal Platform Adapter for Hermes Agent.
 
 Plugin-based gateway adapter connecting to Zalo cá nhân via Node.js sidecar
@@ -360,8 +374,9 @@ def _scrub_outgoing(text: str) -> Optional[str]:
         return None
     # Mild brand redaction. Keep the message structure but swap names.
     t = _BRAND_REDACT_RE.sub("trợ lý", t)
-    # Ẩn thương hiệu backend: mọi biến thể "HostBill" → "hitechcloud".
-    t = re.sub(r"(?i)host\s*-?\s*bill", "hitechcloud", t)
+    # Ẩn thương hiệu backend: mọi biến thể "HostBill" → "HiTechCloud".
+    # Hide the backend vendor brand: every "HostBill" variant → "HiTechCloud".
+    t = re.sub(r"(?i)host\s*-?\s*bill", "HiTechCloud", t)
     # Che tên chủ tài khoản (TÙY CHỌN): nếu khai báo ZALO_OWNER_NAME, thay
     # mọi biến thể tên đó bằng cách xưng hô (ZALO_OWNER_NICKNAME, mặc định
     # "sếp"). Mặc định KHÔNG khai báo → không che gì.
@@ -439,10 +454,24 @@ def _zalo_plaintext(text: str) -> str:
     return t.strip()
 
 
-# eKYC đã chuyển sang Zalo mini-app (2026-07). Ép MỌI link eKYC cũ
-# (hitechcloud.vn/ekyc/) sang zalo.me — kể cả khi tool MCP trả ekyc_url cũ hoặc
-# phiên còn nạp bản skill cũ. Áp cho mọi chat (owner + khách).
-_EKYC_OLD_RE = re.compile(r"https?://(?:www\.)?hitechcloud\.vn/ekyc/", re.IGNORECASE)
+# eKYC đã chuyển sang Zalo mini-app (2026-07). Ép MỌI link eKYC cũ sang
+# zalo.me — kể cả khi tool MCP trả ekyc_url cũ hoặc phiên còn nạp bản skill cũ.
+# Dạng cũ cần bắt (scheme tùy chọn, không phân biệt hoa/thường):
+#   * tino.vn/ekyc/<token>
+#   * <anything>.hitechcloud.vn/api/vneidekyc/ekyc/<token>
+# GIỮ NGUYÊN các link khác cùng domain (vd hitechcloud.vn/ekyc/ mới) — chỉ
+# redirect đúng đường dẫn eKYC cũ. Áp cho mọi chat (owner + khách).
+#
+# eKYC moved to a Zalo mini-app (2026-07). Rewrite EVERY legacy eKYC link to
+# zalo.me — even when the MCP tool still returns an old ekyc_url or the session
+# still has an old skill version loaded. Legacy shapes matched (scheme
+# optional, case-insensitive): tino.vn/ekyc/<token> and
+# <anything>.hitechcloud.vn/api/vneidekyc/ekyc/<token>. Other URLs on the same
+# domains are left alone. Applied to every chat (owner + guests).
+_EKYC_OLD_RE = re.compile(
+    r"(?:https?://)?(?:[\w-]+\.)*(?:tino\.vn/ekyc/|hitechcloud\.vn/api/vneidekyc/ekyc/)",
+    re.IGNORECASE,
+)
 _EKYC_NEW_BASE = "https://zalo.me/s/1106381038231966057/"
 
 

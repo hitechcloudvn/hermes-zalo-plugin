@@ -3,7 +3,13 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Sidecar Node.js cầu nối Zalo Web API (zca-js) cho plugin Hermes Zalo cá nhân.",
+  "description": "Sidecar Node.js cầu nối Zalo Web API (zca-js) cho plugin Hermes Zalo cá nhân. / Node.js sidecar bridging the Zalo Web API (zca-js) for the Hermes personal-Zalo plugin.",
+  "author": "Nguyễn Thanh An <thanhan92f1@gmail.com> (HiTechCloud.VN)",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hitechcloudvn/hermes-zalo-plugin.git"
+  },
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

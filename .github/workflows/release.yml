@@ -1,0 +1,66 @@
+name: Release
+
+# Song ngữ: Phát hành bản phát hành GitHub khi đẩy tag v* (CI build, không build local) /
+# Publish a GitHub Release when a v* tag is pushed (built by CI, not locally).
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Phát hành / Release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cài Python / Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Cài Node / Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Kiểm tra trước khi phát hành / Pre-release checks
+        run: |
+          python -m pip install pytest -q
+          python - <<'PY'
+          import sys
+          try:
+              import yaml
+          except ImportError:
+              import subprocess
+              subprocess.check_call([sys.executable, "-m", "pip", "install", "pyyaml", "-q"])
+              import yaml
+          data = yaml.safe_load(open("plugin.yaml", encoding="utf-8"))
+          tag = "${GITHUB_REF_NAME}".lstrip("v")
+          print(f"tag={tag} plugin.yaml version={data.get('version')}")
+          if tag != str(data.get("version")):
+              sys.exit(f"::error::Tag v{tag} != plugin.yaml version {data.get('version')}")
+          PY
+
+      - name: Kiểm thử Python / Run Python tests
+        run: python -m pytest -q
+
+      - name: Kiểm thử Node / Run Node tests
+        run: cd sidecar && npm ci || npm install && node --test
+
+      - name: Đóng gói nguồn / Package source
+        run: |
+          mkdir -p dist
+          git archive --format=zip --prefix="hermes-zalo-plugin-${GITHUB_REF_NAME}/" \
+            -o "dist/hermes-zalo-plugin-${GITHUB_REF_NAME}.zip" HEAD
+
+      - name: Tạo GitHub Release / Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: hermes-zalo-plugin ${{ github.ref_name }}
+          generate_release_notes: true
+          files: dist/*.zip

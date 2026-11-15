@@ -1,4 +1,4 @@
-"""SSRF-guarded image fetch cho ``zalo_send_image(image_url=...)``.
+"""Tải ảnh có chống SSRF cho ``zalo_send_image(image_url=...)``.
 
 Model chỉ đưa MỘT url (vd ``qr_url`` từ media_store ``mcp.hitechcloud.vn``); adapter tải
 ảnh SERVER-SIDE rồi gửi vào Zalo. Bytes/URL KHÔNG hiển thị cho khách và base64
@@ -14,7 +14,31 @@ Chống SSRF (model-controlled URL fetch server-side):
   * magic-byte sniff (dùng chung ``inbound_media.sniff_image_bytes``) → chắc là ảnh
     thật, không phải HTML/redirect body.
 
-Pure aside from the injected ``http_open`` callable → unit-test không cần mạng.
+Thuần ngoại trừ callable ``http_open`` được inject → unit-test không cần mạng.
+
+----
+
+SSRF-guarded image fetch for ``zalo_send_image(image_url=...)``.
+
+The model supplies a SINGLE url (e.g. a ``qr_url`` from the ``mcp.hitechcloud.vn``
+media store); the adapter fetches the image SERVER-SIDE and sends it to Zalo.
+Bytes/URLs are never shown to customers and the 11KB base64 no longer travels
+through the LLM (the root cause of the old ~160s hang in the QR flow).
+
+SSRF protections (model-controlled URL fetch server-side):
+  * ``https`` only — http/ftp/file/... are rejected.
+  * host must be on the allowlist (default ``mcp.hitechcloud.vn`` — the internal
+    hitechcloud domain where the media store issues QR codes); IP literals and
+    unknown hosts are rejected → blocks 169.254.169.254, 127.0.0.1, internal
+    services.
+  * redirects are FORBIDDEN (3xx → error) — no bouncing to an internal host
+    after passing the allowlist check.
+  * 10MB cap enforced DURING streaming (``Content-Length`` is not trusted) plus
+    a short timeout.
+  * magic-byte sniffing (shared ``inbound_media.sniff_image_bytes``) → the body
+    is a real image, not an HTML/redirect body.
+
+Pure aside from the injected ``http_open`` callable → unit-testable offline.
 """
 from __future__ import annotations
 

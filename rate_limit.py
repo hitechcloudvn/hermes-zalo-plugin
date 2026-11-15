@@ -7,6 +7,20 @@ State là JSON `{"by_chat": {id: {window_start, count}}, "by_user": {...}}` lưu
 đĩa; cửa sổ trượt 1 giờ. Caller truyền sẵn `path` + ngưỡng nên module này thuần
 logic, không đọc env. Owner KHÔNG đi qua đây (cổng non-owner đã cho owner full
 access trước đó) nên không cần bypass owner tại đây.
+
+----
+
+Hourly anti-spam quota shared across call sites (independent of Hermes core).
+
+Split out of adapter.py so (a) it can be tested standalone without importing
+the whole gateway, and (b) it can be reused across paths (currently used for
+native reminder scheduling when a non-owner sets one).
+
+State is JSON ``{"by_chat": {id: {window_start, count}}, "by_user": {...}}``
+persisted to disk; a sliding 1-hour window. Callers pass ``path`` + thresholds
+in, so this module is pure logic and never reads env. The owner does NOT pass
+through here (the non-owner gate already granted the owner full access before
+this point), so no owner bypass is needed here.
 """
 from __future__ import annotations
 
